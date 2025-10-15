@@ -1,0 +1,58 @@
+---
+services:
+  plex:
+    image: plexinc/pms-docker:latest
+    container_name: plex
+    hostname: plex
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "50m"
+    # Uncomment the next line to use host networking mode
+    #network_mode: host
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - 32400:32400/tcp
+      - 8324:8324/tcp
+      - 32469:32469/tcp
+      - 1900:1900/udp
+      - 32410:32410/udp
+      - 32412:32412/udp
+      - 32413:32413/udp
+      - 32414:32414/udp
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ={{ timezone }}
+      - VERSION=docker
+      - PLEX_CLAIM={{ vault_plex_claim_token }} #optional
+      - ADVERTISE_IP=http://{{ ansible_default_ipv4.address }}:32400 
+    volumes:
+      - {{ plex_config_path }} :/config
+      - {{ tv_series_path }}:/tv
+      - {{ movies_path }}:/movies
+      - {{ anime_series_path }}:/anime_series
+      - {{ plex_transcode_path }}:/transcode
+    devices:
+      - "/dev/dri:/dev/dri" # Binds the Intel Quicksync decoder to Plex HW Transcode
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.plex.entrypoints=http"
+      - "traefik.http.routers.plex.rule=Host(`{{ plex_domain_prefix }}.{{ vault_domain }}`)"
+      - "traefik.http.middlewares.plex-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.plex.middlewares=plex-https-redirect"
+      - "traefik.http.routers.plex-secure.entrypoints=https"
+      - "traefik.http.routers.plex-secure.rule=Host(`{{ plex_domain_prefix }}.{{ vault_domain }}`)"
+      - "traefik.http.routers.plex-secure.tls=true"
+      - "traefik.http.routers.plex-secure.service=plex"
+      - "traefik.http.services.plex.loadbalancer.server.port=32400"
+      - "traefik.docker.network={{ proxy_network_name }}"
+    networks:
+      - {{ proxy_network_name }}
+
+
+networks:
+  {{ proxy_network_name }}:
+    external: true

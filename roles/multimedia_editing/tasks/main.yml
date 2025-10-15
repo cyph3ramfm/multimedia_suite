@@ -1,0 +1,33 @@
+---
+- name: Deploy video and image editing if requested
+  when: deploy_multimedia_editing | bool
+  block:
+    - name: Check if proxy Docker network exists
+      community.docker.docker_network_info:
+        name: "{{ proxy_network_name }}"
+      register: proxy_network_info
+
+    - name: Fail if home lab network doesn't exist
+      ansible.builtin.fail:
+        msg: "Required Docker network '{{ proxy_network_name }}' does not exist. Please create the network first through the core_infrastructure role."
+      when: not proxy_network_info.exists
+
+    - name: Create multimedia_editing directory
+      ansible.builtin.file:
+        path: /tmp/multimedia_editing
+        state: directory
+
+    - name: Include handbrake tasks
+      ansible.builtin.include_tasks: handbrake.yml
+      when: handbrake_config_path | length > 0 and handbrake_media_path | length > 0
+
+    - name: Include gimp tasks
+      ansible.builtin.include_tasks: gimp.yml
+      when: gimp_config_path | length > 0 and gimp_multimedia_path | length > 0
+    
+    - name: Delete multimedia_editing related files
+      ansible.builtin.file:
+        path: /tmp/multimedia_editing
+        state: absent
+      when: not debug_mode
+    

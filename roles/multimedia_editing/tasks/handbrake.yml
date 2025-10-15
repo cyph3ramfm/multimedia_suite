@@ -1,0 +1,19 @@
+---
+- name: Check if Handbrake container exists
+  community.docker.docker_container_info:
+    name: handbrake
+  register: handbrake_info
+
+- name: Render Handbrake compose file
+  ansible.builtin.template:
+    src: handbrake.yml.j2
+    dest: /tmp/multimedia_editing/handbrake.yml
+    mode: '0644'
+  when: not handbrake_info.exists
+
+- name: Deploy Handbrake using Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: /tmp/multimedia_editing
+    files:
+      - handbrake.yml
+  when: not handbrake_info.exists

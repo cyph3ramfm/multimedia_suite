@@ -1,0 +1,46 @@
+---
+- name: Check if VPN-dependent services exist
+  community.docker.docker_container_info:
+    name: "{{ item }}"
+  register: container_info
+  loop:
+    - gluetun
+    - bazarr
+    - jackett
+    - radarr
+    - sonarr
+    - transmission
+    - lidarr
+
+- name: Ensure required directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ gluetun_data_path }}"
+    - "{{ gluetun_auth_path }}"
+    - "{{ bazarr_config_path }}"
+    - "{{ jackett_config_path }}"
+    - "{{ radarr_config_path }}"
+    - "{{ sonarr_config_path }}"
+    - "{{ transmission_config_path }}"
+    - "{{ transmission_download_path }}"
+    - "{{ transmission_watch_path }}"
+    - "{{ lidarr_config_path }}"
+  when: not container_info.results[0].exists or not container_info.results[1].exists
+  become: true
+
+- name: Render VPN services compose file
+  ansible.builtin.template:
+    src: vpn_services.yml.j2
+    dest: /tmp/multimedia_download/vpn_services.yml
+    mode: '0644'
+  when: not container_info.results[0].exists or not container_info.results[1].exists
+
+- name: Deploy VPN-dependent services using Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: /tmp/multimedia_download
+    files:
+      - vpn_services.yml
+  when: not container_info.results[0].exists or not container_info.results[1].exists

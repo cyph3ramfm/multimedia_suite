@@ -1,0 +1,125 @@
+---
+# This file contains default variables for the Ansible playbook used to deploy the home lab.
+# Modify these variables as needed for your environment.
+
+######################### Global settings #########################
+timezone: "Europe/London"  # Set your local timezone for accurate log times
+debug_mode: false  # Set to true to enable to enable visibility container deployment files
+
+home_lab_network_name: home_lab # Name of the primary Docker network for the home lab
+proxy_network_name: proxy # Name of the Docker network for the reverse proxy (e.g., Traefik)
+
+######################### Control flow #########################
+deploy_nfs_multimedia: true  # Set to true to deploy NFS share for multimedia files
+deploy_multimedia_download: true  # Set to true to deploy multimedia download services (gluetun, bazarr, jackett, radarr, sonarr, transmission, lidarr, readarr, mylar3)
+deploy_multimedia_editing: true  # Set to true to deploy video and image editing services (handbrake, gimp)
+deploy_multimedia_streaming: true  # Set to true to deploy video playback and streaming services (plex)
+deploy_dashboards: true  ### WARNING!!! ### If set to True it will replace the dashboard services file you're currently using!!!
+
+
+######################### NFS shares #########################
+nfs_server: "nfs.local" # Hostname or IP address of the NFS server (NAS)
+nfs_docker_volumes: "/docker_volumes" # Path on the NFS server to mount
+nfs_multimedia: "/Multimedia" # Path on the NFS server to mount media files and directories to access from containers
+mount_point_docker_volumes: "/mnt/docker_volumes"  # Local mount point for NFS share for Docker volumes
+mount_point_multimedia: "/mnt/multimedia"  # Local mount point for NFS share for multimedia files
+
+tv_series_path: "{{ mount_point_multimedia }}/series" # Path to TV series directory
+movies_path: "{{ mount_point_multimedia }}/filmes" # Path to movies directory
+anime_series_path: "{{ mount_point_multimedia }}/anime/series" # Path to anime series directory
+
+
+#####################################################
+##################### WARNING!!! ####################
+#####################################################
+# For the variables below, if configuring network paths, ensure that the specified paths exist 
+# on your NFS server (NAS) and that the Docker user has the necessary read/write permissions to 
+# these directories. Failure to do so may result in errors during container deployment or runtime.
+# For container volumes, you have the alternative option of using local paths on the host machine.
+# Ensure that these local paths (e.g. /var/docker_data/plex) exist and have appropriate permissions.
+#####################################################
+
+
+######################### Multimedia download #########################
+### Gluetun
+# Note: Ensure that the Gluetun authentication file exists and contains the necessary credentials.
+gluetun_data_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/gluetun" # Path to Gluetun data directory
+gluetun_auth_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/gluetun/auth/" # Path to Gluetun HTTP control server authentication file
+#gluetun_data_path: var/docker_data/gluetun # Path to Gluetun data directory (local path option)
+#gluetun_auth_path: var/docker_data/gluetun/auth/ # Path to Gluetun HTTP control server authentication file (local path option)
+
+### Bazarr
+bazarr_config_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/bazarr/config" # Path to Bazarr config directory
+#bazarr_config_path: var/docker_data/bazarr/config # Path to Bazarr config directory (local path option)
+bazarr_domain_prefix: bazarr # Domain prefix for Bazarr
+
+### Jackett
+jackett_config_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/jackett/config" # Path to Jackett config directory
+#jackett_config_path: var/docker_data/jackett/config # Path to Jackett config directory (local path option)
+jackett_domain_prefix: jackett # Domain prefix for Jackett
+
+### Radarr
+radarr_config_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/radarr/config" # Path to Radarr config
+#radarr_config_path: var/docker_data/radarr/config # Path to Radarr config (local path option)
+radarr_domain_prefix: radarr # Domain prefix for Radarr
+
+### Sonarr
+sonarr_config_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/sonarr/config" # Path to Sonarr config directory
+#sonarr_config_path: var/docker_data/sonarr/config # Path to Sonarr config directory (local path option)
+sonarr_domain_prefix: sonarr # Domain prefix for Sonarr
+
+### Transmission
+transmission_config_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/transmission/config" # Path to Transmission
+#transmission_config_path: var/docker_data/transmission/config # Path to Transmission (local path option)
+transmission_web_ui_path: /config/webuis/flood-for-transmission # Path to alternative Web UI for Transmission (optional)
+transmission_download_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/transmission/downloads" # Path to Transmission download directory
+transmission_watch_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/transmission/downloads/watch" # Path to watch folder for torrents
+transmission_domain_prefix: transmission # Domain prefix for Transmission
+
+### Lidarr
+lidarr_config_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/lidarr/config" # Path to Lidarr config directory
+#lidarr_config_path: var/docker_data/lidarr/config # Path to Lidarr config directory (local path option)
+lidarr_music_path: "{{ mount_point_multimedia }}/music" # Path to music directory
+lidarr_domain_prefix: lidarr # Domain prefix for Lidarr
+
+
+######################### Multimedia streaming #########################
+### Plex
+plex_config_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/plex/config" # Path to Plex configuration directory
+#plex_config_path: /var/docker_data/plex/config # Path to Plex configuration directory (local path option)
+plex_transcode_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/plex/transcode" # Path to Plex transcode directory
+plex_domain_prefix: plex # Domain prefix for Plex
+
+
+######################### Multimedia editing #########################
+### Handbrake
+handbrake_config_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/handbrake/config" # Path to Handbrake configuration directory
+#handbrake_config_path: /var/docker_data/handbrake/config # Path to Handbrake configuration directory (local path option)
+handbrake_media_path: "{{ mount_point_multimedia }}" # Path to multimedia files for Handbrake
+handbrake_watch_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/handbrake/watch" # Path to Handbrake watch directory
+handbrake_output_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/handbrake/output" # Path to Handbrake output directory
+handbrake_domain_prefix: handbrake # Domain prefix for Handbrake
+
+### Gimp
+gimp_config_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/gimp/config" # Path to Gimp configuration directory
+#gimp_config_path: /var/docker_data/gimp/config # Path to Gimp configuration directory (local path option)
+gimp_multimedia_path: "{{ mount_point_multimedia }}" # Path to multimedia files for Gimp
+gimp_domain_prefix: gimp # Domain prefix for Gimp
+
+
+######################### Dashboards #########################
+### Homepage
+homepage_config_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/homepage/config" # Path to store homepage configuration files
+#homepage_config_path: /var/docker_data/homepage/config # Path to store homepage configuration files (local path option)
+homepage_domain_prefix: homepage # Domain prefix for Homepage
+
+# Existing services data points relevant to Homepage
+pihole_domain_prefix: pihole # Domain prefix for Pi-hole
+portainer_domain_prefix: portainer  # Domain prefix for Portainer
+traefik_domain_prefix: traefik-dashboard  # Domain prefix for Traefik
+it_tools_domain_prefix: it-tools # Domain prefix for It-tools
+vs_code_server_domain_prefix: vs_code_server # Domain prefix for VS Code Server
+glances_domain_prefix: glances # Domain prefix for Glances
+uptime_kuma_domain_prefix: uptime-kuma # Domain prefix for Uptime Kuma
+wg_domain_prefix: wireguard # Domain prefix for WireGuard dashboard
+putty_domain_prefix: putty # Domain prefix for Putty

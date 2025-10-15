@@ -1,0 +1,221 @@
+---
+services:
+  gluetun:
+    image: qmcgaw/gluetun:v3
+    container_name: gluetun
+    hostname: gluetun
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "50m"
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - 6881:6881         # for torrenting
+      - 6881:6881/udp     # for torrenting
+      - 8000:8000/tcp     # for server control and status reporting (NO WEB UI)
+      - 9091:9091         # Transmission
+      - 51413:51413       # Transmission
+      - 51413:51413/udp   # Transmission
+      - 9117:9117         # Jackett
+      - 6767:6767         # Bazarr
+      - 7878:7878         # Radarr
+      - 8989:8989         # Sonarr
+      - 8686:8686         # Lidarr
+    volumes:
+      - {{ gluetun_data_path }}:/gluetun
+    environment:
+      # See https://github.com/qdm12/gluetun-wiki/tree/main/setup#setup
+      # Current configuration uses NordVPN with WireGuard
+      - VPN_SERVICE_PROVIDER=nordvpn
+      - VPN_TYPE=wireguard
+      # OpenVPN:
+      # - OPENVPN_USER=
+      # - OPENVPN_PASSWORD=
+      # Wireguard:
+      - WIREGUARD_PRIVATE_KEY={{ vault_gluetun_wireguard_key }} # See https://github.com/lluked/NordVPN_Get-WireGuard-Config/tree/main and https://github.com/qdm12/gluetun-wiki/blob/main/setup/providers/nordvpn.md#obtain-your-wireguard-private-key
+      - WIREGUARD_ADDRESSES=10.5.0.2/32
+      # Timezone for accurate log times
+      - TZ={{ timezone }}
+      # Server list updater
+      # See https://github.com/qdm12/gluetun-wiki/blob/main/setup/servers.md#update-the-vpn-servers-list
+      - UPDATER_PERIOD=24h
+      - HTTP_CONTROL_SERVER_AUTH_CONFIG_FILEPATH={{ gluetun_auth_path }} # Path to Gluetun authentication file
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ proxy_network_name }}"
+
+      # Bazarr
+      - "traefik.http.routers.bazarr-secure.entrypoints=https"
+      - "traefik.http.routers.bazarr-secure.rule=Host(`{{ bazarr_domain_prefix }}.{{ vault_domain }}`)"
+      - "traefik.http.routers.bazarr-secure.tls=true"
+      - "traefik.http.routers.bazarr-secure.service=bazarr"
+      - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
+
+      # Jackett
+      - "traefik.http.routers.jackett-secure.entrypoints=https"
+      - "traefik.http.routers.jackett-secure.rule=Host(`{{ jackett_domain_prefix }}.{{ vault_domain }}`)"
+      - "traefik.http.routers.jackett-secure.tls=true"
+      - "traefik.http.routers.jackett-secure.service=jackett"
+      - "traefik.http.services.jackett.loadbalancer.server.port=9117"
+
+      # Radarr
+      - "traefik.http.routers.radarr-secure.entrypoints=https"
+      - "traefik.http.routers.radarr-secure.rule=Host(`{{ radarr_domain_prefix }}.{{ vault_domain }}`)"
+      - "traefik.http.routers.radarr-secure.tls=true"
+      - "traefik.http.routers.radarr-secure.service=radarr"
+      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
+
+      # Sonarr
+      - "traefik.http.routers.sonarr-secure.entrypoints=https"
+      - "traefik.http.routers.sonarr-secure.rule=Host(`{{ sonarr_domain_prefix }}.{{ vault_domain }}`)"
+      - "traefik.http.routers.sonarr-secure.tls=true"
+      - "traefik.http.routers.sonarr-secure.service=sonarr"
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
+
+      # Transmission
+      - "traefik.http.routers.transmission-secure.entrypoints=https"
+      - "traefik.http.routers.transmission-secure.rule=Host(`{{ transmission_domain_prefix }}.{{ vault_domain }}`)"
+      - "traefik.http.routers.transmission-secure.tls=true"
+      - "traefik.http.routers.transmission-secure.service=transmission"
+      - "traefik.http.services.transmission.loadbalancer.server.port=9091"
+
+      # Lidarr
+      - "traefik.http.routers.lidarr-secure.entrypoints=https"
+      - "traefik.http.routers.lidarr-secure.rule=Host(`{{ lidarr_domain_prefix }}.{{ vault_domain }}`)"
+      - "traefik.http.routers.lidarr-secure.tls=true"
+      - "traefik.http.routers.lidarr-secure.service=lidarr"
+      - "traefik.http.services.lidarr.loadbalancer.server.port=8686"
+
+    networks:
+      - {{ proxy_network_name }}
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ={{ timezone }}
+    volumes:
+      - {{ bazarr_config_path }}:/config
+      - {{ tv_series_path }}:/tv #optional
+      - {{ movies_path }}:/movies #optional
+      - {{ anime_series_path }}:/anime_series #optional    
+    network_mode: "service:gluetun"
+
+  jackett:
+    image: lscr.io/linuxserver/jackett:latest
+    container_name: jackett
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "50m"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ={{ timezone }}
+      - AUTO_UPDATE=true #optional
+      - RUN_OPTS= #optional
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - {{ jackett_config_path }}:/config
+      - {{ transmission_watch_path }}:/downloads
+    network_mode: "service:gluetun"
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ={{ timezone }}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - {{ radarr_config_path }}:/config
+      - {{ movies_path }}:/movies #optional
+      - {{ transmission_download_path }}:/downloads #optional
+    network_mode: "service:gluetun"
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "50m"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ={{ timezone }}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - {{ sonarr_config_path }}:/config
+      - {{ tv_series_path }}:/tv #optional      
+      - {{ anime_series_path }}:/anime_series #optional
+      - {{ transmission_download_path }}:/downloads #optional    
+    network_mode: "service:gluetun"
+
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: transmission
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "50m"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ={{ timezone }} # Set your local timezone
+      # Path to alternate Web UI is relative to /config not the full path like volume mappings (e.g. /config/webuis/flood-for-transmission)
+      - TRANSMISSION_WEB_HOME={{ transmission_web_ui_path }} #optional comment for default Web UI --> Alternative Web UI selected is Combustion: see https://github.com/johman10/flood-for-transmission
+      #- USER= #optional
+      #- PASS= #optional
+      #- WHITELIST= #optional
+      #- PEERPORT= #optional
+      #- HOST_WHITELIST= #optional
+    volumes:
+      - {{ transmission_config_path }}:/config
+      - {{ transmission_download_path }}:/downloads
+      - {{ transmission_watch_path }}:/watch
+    network_mode: "service:gluetun"
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ={{ timezone }}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - {{ lidarr_config_path }}:/config
+      - {{ lidarr_music_path }}:/music #optional
+      - {{ transmission_download_path }}:/downloads #optional
+    network_mode: "service:gluetun"
+
+
+networks:
+  {{ proxy_network_name }}:
+    external: true

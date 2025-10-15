@@ -1,0 +1,44 @@
+---
+services:
+  handbrake:
+    image: jlesage/handbrake
+    container_name: handbrake
+    hostname: handbrake
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "50m"
+    #ports:
+    #  - "5800:5800"
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ={{ timezone }}
+      - KEEP_APP_RUNNING=1
+    volumes:    
+      - {{ handbrake_config_path }}:/config:rw
+      - {{ handbrake_media_path }}:/storage:ro
+      - {{ handbrake_watch_path }}:/watch:rw
+      - {{ handbrake_output_path }}:/output:rw
+    devices:
+      - "/dev/dri:/dev/dri" # Binds the Intel Quicksync decoder to HW Transcode
+    labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.handbrake.entrypoints=http"
+        - "traefik.http.routers.handbrake.rule=Host(`{{ handbrake_domain_prefix }}.{{ vault_domain }}`)"
+        - "traefik.http.middlewares.handbrake-https-redirect.redirectscheme.scheme=https"
+        - "traefik.http.routers.handbrake.middlewares=handbrake-https-redirect"
+        - "traefik.http.routers.handbrake-secure.entrypoints=https"
+        - "traefik.http.routers.handbrake-secure.rule=Host(`{{ handbrake_domain_prefix }}.{{ vault_domain }}`)"
+        - "traefik.http.routers.handbrake-secure.tls=true"
+        - "traefik.http.routers.handbrake-secure.service=handbrake"
+        - "traefik.http.services.handbrake.loadbalancer.server.port=5800"
+        - "traefik.docker.network={{ proxy_network_name }}"
+    networks:
+      - {{ proxy_network_name }}
+
+
+networks:
+  {{ proxy_network_name }}:
+    external: true

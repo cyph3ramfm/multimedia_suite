@@ -1,0 +1,33 @@
+---
+- name: Deploy multimedia download if requested
+  when: deploy_multimedia_download | bool
+  block:
+    - name: Check if proxy Docker network exists
+      community.docker.docker_network_info:
+        name: "{{ proxy_network_name }}"
+      register: proxy_network_info
+
+    - name: Fail if proxy network doesn't exist
+      ansible.builtin.fail:
+        msg: "Required Docker network '{{ proxy_network_name }}' does not exist. Please create the network first through the core_infrastructure role."
+      when: not proxy_network_info.exists
+
+    - name: Create multimedia_download directory
+      ansible.builtin.file:
+        path: /tmp/multimedia_download
+        state: directory
+
+    - name: Include VPN-dependent services tasks
+      ansible.builtin.include_tasks: vpn_services.yml
+      when: (vault_gluetun_wireguard_key | length > 0 and gluetun_data_path | length > 0) and
+            (bazarr_config_path | length > 0) and (jackett_config_path | length > 0) and
+            (radarr_config_path | length > 0) and (sonarr_config_path | length > 0) and
+            (transmission_config_path | length > 0 and transmission_download_path | length > 0 and transmission_watch_path | length > 0) and
+            (lidarr_config_path | length > 0)
+            
+
+    - name: Delete multimedia_download related files
+      ansible.builtin.file:
+        path: /tmp/multimedia_download
+        state: absent
+      when: not debug_mode

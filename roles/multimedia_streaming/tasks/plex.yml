@@ -1,0 +1,19 @@
+---
+- name: Check if Plex container exists
+  community.docker.docker_container_info:
+    name: plex
+  register: plex_info
+
+- name: Render Plex compose file
+  ansible.builtin.template:
+    src: plex.yml.j2
+    dest: /tmp/multimedia_streaming/plex.yml
+    mode: '0644'
+  when: not plex_info.exists
+
+- name: Deploy Plex using Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: /tmp/multimedia_streaming
+    files:
+      - plex.yml
+  when: not plex_info.exists

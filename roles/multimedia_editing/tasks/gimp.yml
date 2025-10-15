@@ -1,0 +1,19 @@
+---
+- name: Check if Gimp container exists
+  community.docker.docker_container_info:
+    name: gimp
+  register: gimp_info
+
+- name: Render Gimp compose file
+  ansible.builtin.template:
+    src: gimp.yml.j2
+    dest: /tmp/multimedia_editing/gimp.yml
+    mode: '0644'
+  when: not gimp_info.exists
+
+- name: Deploy Gimp using Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: /tmp/multimedia_editing
+    files:
+      - gimp.yml
+  when: not gimp_info.exists

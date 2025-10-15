@@ -1,0 +1,39 @@
+---
+- name: Deploy multimedia streaming if requested
+  when: deploy_multimedia_streaming | bool
+  block:
+    - name: Check if home lab Docker network exists
+      community.docker.docker_network_info:
+        name: "{{ home_lab_network_name }}"
+      register: network_info
+
+    - name: Fail if home lab network doesn't exist
+      ansible.builtin.fail:
+        msg: "Required Docker network '{{ home_lab_network_name }}' does not exist. Please create the network first through the base_network_watchtower role."
+      when: not network_info.exists
+
+    - name: Check if proxy Docker network exists
+      community.docker.docker_network_info:
+        name: "{{ proxy_network_name }}"
+      register: proxy_network_info
+
+    - name: Fail if home lab network doesn't exist
+      ansible.builtin.fail:
+        msg: "Required Docker network '{{ proxy_network_name }}' does not exist. Please create the network first through the core_infrastructure role."
+      when: not proxy_network_info.exists
+
+    - name: Create multimedia_streaming directory
+      ansible.builtin.file:
+        path: /tmp/multimedia_streaming
+        state: directory
+
+    - name: Include plex tasks
+      ansible.builtin.include_tasks: plex.yml
+      when: plex_config_path | length > 0 and tv_series_path | length > 0 and movies_path | length > 0
+            and anime_series_path | length > 0 and plex_transcode_path | length > 0
+
+    - name: Delete multimedia_streaming related files
+      ansible.builtin.file:
+        path: /tmp/multimedia_streaming
+        state: absent
+      when: not debug_mode

@@ -1,0 +1,47 @@
+---
+services:
+  gimp:
+    image: lscr.io/linuxserver/gimp:latest
+    container_name: gimp
+    hostname: gimp
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "50m"
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ={{ timezone }}
+      - DARK_MODE=1
+      #- CUSTOM_USER=custom_username # optional: set custom username
+      #- PASSWORD=secure_password # optional: set custom password
+    volumes:
+      - {{ gimp_config_path }}:/config
+      - {{ gimp_multimedia_path }}:/multimedia
+    #ports:
+    #  - 3000:3000 # Gimp web interface port
+    #  - 3001:3001 # Gimp web interface port for https traffic
+    devices:
+      - "/dev/dri:/dev/dri" # Binds the Intel Quicksync decoder to HW Transcode
+    security_opt:
+      - seccomp:unconfined #optional
+    labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.gimp.entrypoints=http"
+        - "traefik.http.routers.gimp.rule=Host(`{{ gimp_domain_prefix }}.{{ vault_domain }}`)"
+        - "traefik.http.middlewares.gimp-https-redirect.redirectscheme.scheme=https"
+        - "traefik.http.routers.gimp.middlewares=gimp-https-redirect"
+        - "traefik.http.routers.gimp-secure.entrypoints=https"
+        - "traefik.http.routers.gimp-secure.rule=Host(`{{ gimp_domain_prefix }}.{{ vault_domain }}`)"
+        - "traefik.http.routers.gimp-secure.tls=true"
+        - "traefik.http.routers.gimp-secure.service=gimp"
+        - "traefik.http.services.gimp.loadbalancer.server.port=3000"
+        - "traefik.docker.network={{ proxy_network_name }}"
+    networks:
+      - {{ proxy_network_name }}
+
+
+networks:
+  {{ proxy_network_name }}:
+    external: true
