@@ -11,13 +11,13 @@ vault_gluetun_wireguard_key: # WireGuard key for Gluetun
 
 ######################### Multimedia streaming #########################
 ### Plex
-vault_plex_claim_token: # Plex claim token (optional, can be left empty). For further info see: https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/
+vault_plex_claim_token: # Plex claim token (optional, can be left empty). To generate a claim token associate with your plex account go to: https://plex.tv/claim
 
 
 ######################### Dashboards #########################
 ### Homepage
 vault_homepage_allowed_hosts: "{{ homepage_domain_prefix }}.{{ vault_domain }}" # List of allowed hosts for homepage
-vault_homepage_services_pihole_widget_key: "{{ vault_pi_hole_webpassword }}" # Pi-hole widget key for homepage. Follow these instructions to create: https://https://gethomepage.dev/widgets/services/pihole/
+vault_homepage_services_pihole_widget_key: "{{ vault_pi_hole_webpassword }}" # Pi-hole widget key for homepage. Follow these instructions to create: https://gethomepage.dev/widgets/services/pihole/
 
 # Existing services data points relevant to Homepage
 vault_pi_hole_webpassword:  # Web password for Pi-hole
