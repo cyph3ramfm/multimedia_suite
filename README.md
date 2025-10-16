@@ -51,13 +51,19 @@ An Ansible-powered home lab deployer that sets up a complete multimedia environm
 
 4. **Deploy the stack**:
    ```bash
-   # Deploy with vault password and sudo privileges
-   ansible-playbook deploy_home_lab_playbook.yml -i inventory/hosts \\
-     --vault-password-file ~/.vault_pass.txt --ask-become-pass
+    # Deploy with vault password and sudo privileges
+    ansible-playbook deploy_multimedia_suite_playbook.yml -i inventory/hosts \\
+       --vault-password-file ~/.vault_pass.txt --ask-become-pass
    
-   # For testing/preview (shows what would change)
-   ansible-playbook deploy_home_lab_playbook.yml -i inventory/hosts \\
-     --vault-password-file ~/.vault_pass.txt --ask-become-pass --check
+    # For testing/preview (shows what would change)
+    ansible-playbook deploy_multimedia_suite_playbook.yml -i inventory/hosts \\
+       --vault-password-file ~/.vault_pass.txt --ask-become-pass --check
+   
+    # Alternative: prompt for vault password (and become password)   
+    ansible-playbook -i inventory/hosts \
+      --ask-vault-pass \
+      --ask-become \
+      deploy_multimedia_suite_playbook.yml
    ```
 
 ## Managing Secrets with ansible-vault
@@ -192,7 +198,7 @@ debug_mode: true  # in group_vars/main.yml
 
 2. Review Ansible output with increased verbosity:
    ```bash
-   ansible-playbook deploy_home_lab_playbook.yml -vvv
+   ansible-playbook deploy_multimedia_suite_playbook.yml -vvv
    ```
 
 3. Verify service connectivity:
