@@ -20,13 +20,13 @@ deploy_dashboards: true  ### WARNING!!! ### If set to True it will replace the d
 ######################### NFS shares #########################
 nfs_server: "nfs.local" # Hostname or IP address of the NFS server (NAS)
 nfs_docker_volumes: "/docker_volumes" # Path on the NFS server to mount
-nfs_multimedia: "/Multimedia" # Path on the NFS server to mount media files and directories to access from containers
+nfs_multimedia: "/multimedia" # Path on the NFS server to mount media files and directories to access from containers
 mount_point_docker_volumes: "/mnt/docker_volumes"  # Local mount point for NFS share for Docker volumes
 mount_point_multimedia: "/mnt/multimedia"  # Local mount point for NFS share for multimedia files
 
-tv_series_path: "{{ mount_point_multimedia }}/series" # Path to TV series directory
-movies_path: "{{ mount_point_multimedia }}/filmes" # Path to movies directory
-anime_series_path: "{{ mount_point_multimedia }}/anime/series" # Path to anime series directory
+tv_series_path: "{{ mount_point_multimedia }}/tv_shows" # Path to TV series directory
+movies_path: "{{ mount_point_multimedia }}/movies" # Path to movies directory
+anime_series_path: "{{ mount_point_multimedia }}/anime" # Path to anime series directory
 
 
 #####################################################
@@ -111,3 +111,4 @@ glances_domain_prefix: glances # Domain prefix for Glances
 uptime_kuma_domain_prefix: uptime-kuma # Domain prefix for Uptime Kuma
 wg_domain_prefix: wireguard # Domain prefix for WireGuard dashboard
 putty_domain_prefix: putty # Domain prefix for Putty
+
