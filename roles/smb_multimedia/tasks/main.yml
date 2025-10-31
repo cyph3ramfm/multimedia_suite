@@ -1,0 +1,35 @@
+---
+- name: Mount SMB/CIFS share for Multimedia
+  when: deploy_smb_multimedia | bool
+  become: true
+  block:
+    - name: Ensure CIFS utilities are installed
+      apt:
+        name: cifs-utils
+        state: present
+        update_cache: true
+      become: true
+
+    - name: Ensure mount point exists
+      file:
+        path: "{{ mount_point_multimedia }}"
+        state: directory
+        mode: '0775'
+
+    - name: Create credentials file for SMB share
+      copy:
+        dest: /etc/cifs-creds
+        content: |
+          username={{ vault_nas_smb_user }}
+          password={{ vault_nas_smb_password }}
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Mount NAS SMB share permanently via fstab
+      mount:
+        path: "{{ mount_point_multimedia }}"
+        src: "//{{ nas_server }}/{{ smb_multimedia }}"
+        fstype: cifs
+        opts: "credentials=/etc/cifs-creds,vers=3.1.1,uid=1000,gid=3000,dir_mode=0775,file_mode=0664,cache=strict,soft,nofail,_netdev"
+        state: mounted
