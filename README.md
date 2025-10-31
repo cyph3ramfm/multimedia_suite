@@ -1,6 +1,6 @@
 # Multimedia Home Lab Suite
 
-An Ansible-powered home lab deployer that sets up a complete multimedia environment using Docker containers. Features include media streaming (Plex), download automation (Sonarr, Radarr, etc.), and media editing tools, all configured with secure access and NFS storage integration. This multimedia suite extends the functionality of the Home Lab deployment available at https://github.com/cyph3ramfm/home_lab_setup
+An Ansible-powered home lab deployer that sets up a complete multimedia environment using Docker containers. Features include media streaming (Plex), download automation (Sonarr, Radarr, etc.), and media editing tools, all configured with secure access and SMB/CIFS (NAS) storage integration. This multimedia suite extends the functionality of the Home Lab deployment available at https://github.com/cyph3ramfm/home_lab_setup
 
 ## Features
 
@@ -16,11 +16,11 @@ An Ansible-powered home lab deployer that sets up a complete multimedia environm
   - Handbrake (video transcoding)
   - GIMP (image editing)
 - **Dashboard**: Homepage for service monitoring and quick access
-- **Storage**: NFS integration for media and container persistence
+- **Storage**: SMB/CIFS (NAS) integration for media and container persistence
 
 ## Prerequisites
 
-- NFS server accessible from the target host(s)
+- SMB-capable NAS accessible from the target host(s) (shares must be exported and reachable)
 - [Home Lab and pre-requisites deployed](https://github.com/cyph3ramfm/home_lab_setup)
 
 ## Quick Start
@@ -46,7 +46,7 @@ An Ansible-powered home lab deployer that sets up a complete multimedia environm
    ```
 
 3. **Configure settings**:
-   - Edit `group_vars/main.yml` to set NFS paths, domain prefixes, and enable/disable features
+   - Edit `group_vars/main.yml` to set NAS/SMB paths (e.g. `nas_server`, `smb_multimedia`, `mount_point_multimedia`), domain prefixes, and enable/disable features
    - Update `inventory/hosts` with your target host(s)
 
 4. **Deploy the stack**:
@@ -121,13 +121,29 @@ This project uses `ansible-vault` to securely store sensitive information in `gr
 
 ### Common Issues
 
-1. **NFS Mount Failures**
-   ```
-   Error: Failed to mount NFS share
-   ```
-   - Check NFS server is accessible (`showmount -e <nfs_server>`)
-   - Verify NFS paths exist on server
-   - Ensure NFS client is installed: `apt install nfs-common`
+1. **SMB/CIFS (NAS) Mount Failures**
+    ```
+    Error: Failed to mount SMB/CIFS share
+    ```
+    - Check the NAS is reachable (e.g. `ping <nas_server>`)
+    - List available SMB shares using `smbclient -L //<nas_server>` (install `smbclient` if missing)
+    - Verify the SMB share path exists on the NAS and the account you plan to use has appropriate permissions
+    - Ensure the host has CIFS utilities installed: `apt install cifs-utils` (Ubuntu/Debian)
+    - Example `/etc/fstab` entry (use a credentials file, do NOT store passwords directly in fstab):
+
+       ```text
+       //nas_server/multimedia /mnt/multimedia cifs credentials=/root/.smbcredentials,iocharset=utf8,vers=3.0 0 0
+       ```
+
+    - Create a credentials file `/root/.smbcredentials` with:
+
+       ```text
+       username=your_username
+       password=your_password
+       domain=YOUR_DOMAIN  # optional
+       ```
+
+       Set restrictive permissions on the credentials file: `chmod 600 /root/.smbcredentials`.
 
 2. **Docker Network Issues**
    ```
@@ -174,9 +190,12 @@ debug_mode: true  # in group_vars/main.yml
 
 ### Health Checks
 
-1. **Check NFS Mounts**:
+1. **Check SMB Mounts**:
    ```bash
+   # Check mounted filesystems for configured mount points
    df -h | grep -E "$(grep mount_point_ group_vars/main.yml | cut -d: -f2)"
+   # List SMB shares available on the NAS (may require credentials)
+   smbclient -L //<your-nas-host> -N || true
    ```
 
 2. **Verify Docker Networks**:
@@ -208,10 +227,10 @@ debug_mode: true  # in group_vars/main.yml
 
 ## Role Dependencies
 
-- `nfs_multimedia`: Required by all media-related roles
-- `multimedia_download`: Depends on working NFS mounts
-- `multimedia_streaming`: Expects media folders from NFS
-- `multimedia_editing`: Uses NFS for input/output
+- `smb_multimedia`: Required by all media-related roles
+-- `multimedia_download`: Depends on working SMB/CIFS mounts
+-- `multimedia_streaming`: Expects media folders from SMB/CIFS mounts
+-- `multimedia_editing`: Uses SMB/CIFS mounts for input/output
 - `dashboards`: Independent but enhanced by other services
 
 ## Contributing
