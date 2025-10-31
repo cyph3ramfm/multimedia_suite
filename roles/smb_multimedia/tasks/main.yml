@@ -31,5 +31,5 @@
         path: "{{ mount_point_multimedia }}"
         src: "//{{ nas_server }}/{{ smb_multimedia }}"
         fstype: cifs
-        opts: "credentials=/etc/cifs-creds,vers=3.1.1,uid=1000,gid=3000,dir_mode=0775,file_mode=0664,cache=strict,soft,nofail,_netdev"
+        opts: "credentials=/etc/cifs-creds,vers=3.1.1,uid=1000,gid=1000,dir_mode=0775,file_mode=0664,cache=strict,soft,nofail,_netdev"
         state: mounted
