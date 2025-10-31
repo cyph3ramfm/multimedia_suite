@@ -3,6 +3,9 @@
 vault_device_name:  # Name of the device
 vault_domain: # Domain url
 
+vault_nas_smb_user: # username for the NAS user
+vault_nas_smb_password: # password for the NAS user
+
 
 ######################### Multimedia download #########################
 ### Gluetun
