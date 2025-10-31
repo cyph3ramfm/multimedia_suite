@@ -6,8 +6,9 @@
     - group_vars/vault.yml
 
   roles:
-    - nfs_multimedia
+    - smb_multimedia
     - multimedia_download
     - multimedia_streaming
     - multimedia_editing
+
     - dashboards
