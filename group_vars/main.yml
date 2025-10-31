@@ -23,8 +23,7 @@ nas_server: "nas.local" # Hostname or IP address of the NAS server
 # Legacy variable names that refer to NFS paths are retained for backward
 # compatibility with role implementations. Prefer using `smb_multimedia` and
 # `mount_point_*` variables for SMB/CIFS mounts.
-nfs_docker_volumes: "/docker_volumes" # Legacy: Path on the (previous) NFS server to mount Docker volumes
-smb_multimedia: "/multimedia" # Path on the NAS server to mount media files and directories to access from containers
+smb_multimedia: "multimedia" # Path on the NAS server to mount media files and directories to access from containers
 mount_point_docker_volumes: "/mnt/docker_volumes"  # Local mount point for NFS share for Docker volumes
 mount_point_multimedia: "/mnt/multimedia"  # Local mount point for NFS share for multimedia files  (SMB/CIFS)
 
@@ -115,5 +114,6 @@ glances_domain_prefix: glances # Domain prefix for Glances
 uptime_kuma_domain_prefix: uptime-kuma # Domain prefix for Uptime Kuma
 wg_domain_prefix: wireguard # Domain prefix for WireGuard dashboard
 putty_domain_prefix: putty # Domain prefix for Putty
+
 
 
