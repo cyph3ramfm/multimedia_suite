@@ -10,7 +10,7 @@ home_lab_network_name: home_lab # Name of the primary Docker network for the hom
 proxy_network_name: proxy # Name of the Docker network for the reverse proxy (e.g., Traefik)
 
 ######################### Control flow #########################
-deploy_nfs_multimedia: true  # Set to true to deploy NFS share for multimedia files
+deploy_smb_multimedia: true  # Set to true to deploy SMB share for multimedia files
 deploy_multimedia_download: true  # Set to true to deploy multimedia download services (gluetun, bazarr, jackett, radarr, sonarr, transmission, lidarr, readarr, mylar3)
 deploy_multimedia_editing: true  # Set to true to deploy video and image editing services (handbrake, gimp)
 deploy_multimedia_streaming: true  # Set to true to deploy video playback and streaming services (plex)
@@ -18,11 +18,15 @@ deploy_dashboards: true  ### WARNING!!! ### If set to True it will replace the d
 
 
 ######################### NFS shares #########################
-nfs_server: "nfs.local" # Hostname or IP address of the NFS server (NAS)
-nfs_docker_volumes: "/docker_volumes" # Path on the NFS server to mount
-nfs_multimedia: "/multimedia" # Path on the NFS server to mount media files and directories to access from containers
+nas_server: "nas.local" # Hostname or IP address of the NAS server
+# NOTE: This project migrated from NFS to SMB/CIFS for multimedia storage.
+# Legacy variable names that refer to NFS paths are retained for backward
+# compatibility with role implementations. Prefer using `smb_multimedia` and
+# `mount_point_*` variables for SMB/CIFS mounts.
+nfs_docker_volumes: "/docker_volumes" # Legacy: Path on the (previous) NFS server to mount Docker volumes
+smb_multimedia: "/multimedia" # Path on the NAS server to mount media files and directories to access from containers
 mount_point_docker_volumes: "/mnt/docker_volumes"  # Local mount point for NFS share for Docker volumes
-mount_point_multimedia: "/mnt/multimedia"  # Local mount point for NFS share for multimedia files
+mount_point_multimedia: "/mnt/multimedia"  # Local mount point for NFS share for multimedia files  (SMB/CIFS)
 
 tv_series_path: "{{ mount_point_multimedia }}/tv_shows" # Path to TV series directory
 movies_path: "{{ mount_point_multimedia }}/movies" # Path to movies directory
@@ -33,7 +37,7 @@ anime_series_path: "{{ mount_point_multimedia }}/anime" # Path to anime series d
 ##################### WARNING!!! ####################
 #####################################################
 # For the variables below, if configuring network paths, ensure that the specified paths exist 
-# on your NFS server (NAS) and that the Docker user has the necessary read/write permissions to 
+# on your NAS server and that the Docker user has the necessary read/write permissions to 
 # these directories. Failure to do so may result in errors during container deployment or runtime.
 # For container volumes, you have the alternative option of using local paths on the host machine.
 # Ensure that these local paths (e.g. /var/docker_data/plex) exist and have appropriate permissions.
@@ -111,4 +115,5 @@ glances_domain_prefix: glances # Domain prefix for Glances
 uptime_kuma_domain_prefix: uptime-kuma # Domain prefix for Uptime Kuma
 wg_domain_prefix: wireguard # Domain prefix for WireGuard dashboard
 putty_domain_prefix: putty # Domain prefix for Putty
+
 
