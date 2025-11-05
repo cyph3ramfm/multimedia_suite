@@ -4,7 +4,7 @@ services:
     image: qmcgaw/gluetun:v3
     container_name: gluetun
     hostname: gluetun
-    restart: unless-stopped
+    restart: always
     logging:
       driver: "json-file"
       options:
@@ -44,6 +44,11 @@ services:
       # See https://github.com/qdm12/gluetun-wiki/blob/main/setup/servers.md#update-the-vpn-servers-list
       - UPDATER_PERIOD=24h
       - HTTP_CONTROL_SERVER_AUTH_CONFIG_FILEPATH={{ gluetun_auth_path }} # Path to Gluetun authentication file
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", http://127.0.0.1:9999/v1/status | grep -q 'vpn_active=true'"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network={{ proxy_network_name }}"
@@ -96,7 +101,7 @@ services:
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
-    restart: unless-stopped
+    restart: always
     logging:
       driver: "json-file"
       options:
@@ -111,11 +116,14 @@ services:
       - {{ movies_path }}:/movies #optional
       - {{ anime_series_path }}:/anime_series #optional    
     network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
 
   jackett:
     image: lscr.io/linuxserver/jackett:latest
     container_name: jackett
-    restart: unless-stopped
+    restart: always
     logging:
       driver: "json-file"
       options:
@@ -131,11 +139,14 @@ services:
       - {{ jackett_config_path }}:/config
       - {{ transmission_watch_path }}:/downloads
     network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
-    restart: unless-stopped
+    restart: always
     logging:
       driver: "json-file"
       options:
@@ -150,11 +161,14 @@ services:
       - {{ movies_path }}:/movies #optional
       - {{ transmission_download_path }}:/downloads #optional
     network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
-    restart: unless-stopped
+    restart: always
     logging:
       driver: "json-file"
       options:
@@ -170,11 +184,14 @@ services:
       - {{ anime_series_path }}:/anime_series #optional
       - {{ transmission_download_path }}:/downloads #optional    
     network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
 
   transmission:
     image: lscr.io/linuxserver/transmission:latest
     container_name: transmission
-    restart: unless-stopped
+    restart: always
     logging:
       driver: "json-file"
       options:
@@ -195,11 +212,14 @@ services:
       - {{ transmission_download_path }}:/downloads
       - {{ transmission_watch_path }}:/watch
     network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
 
   lidarr:
     image: lscr.io/linuxserver/lidarr:latest
     container_name: lidarr
-    restart: unless-stopped
+    restart: always
     logging:
       driver: "json-file"
       options:
@@ -214,8 +234,10 @@ services:
       - {{ lidarr_music_path }}:/music #optional
       - {{ transmission_download_path }}:/downloads #optional
     network_mode: "service:gluetun"
-
-
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        
 networks:
   {{ proxy_network_name }}:
     external: true
